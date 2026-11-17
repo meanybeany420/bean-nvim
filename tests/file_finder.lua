@@ -1,0 +1,45 @@
+-- Run from ~/.config/nvim with nvim --headless -u NONE -i NONE -l tests/file_finder.lua
+vim.opt.rtp:prepend(vim.fn.getcwd())
+local root = vim.fn.tempname()
+vim.fn.mkdir(root .. "/.git", "p")
+vim.fn.mkdir(root .. "/nested", "p")
+vim.fn.writefile({ "keep this" }, root .. "/nested/source.txt")
+local cwd = vim.fn.getcwd()
+local ok, err = pcall(function()
+  local finder = require("config.file_finder")
+  vim.cmd.lcd(vim.fn.fnameescape(root .. "/nested"))
+  vim.cmd.edit(vim.fn.fnameescape(root .. "/nested/source.txt"))
+  local scopes, selected = finder.scopes()
+  assert(scopes[1].path == root, "Detect the enclosing project root")
+  assert(scopes[2].path == root .. "/nested", "Offer the current directory")
+  assert(scopes[3].path == vim.uv.os_homedir(), "Offer the home directory")
+  assert(scopes[4].path == nil and selected == 1, "Offer custom directory and default to the project")
+
+  local origin = vim.api.nvim_get_current_buf()
+  vim.api.nvim_win_set_cursor(0, { 1, 3 })
+  vim.bo.modified = true
+  local old_number = vim.wo.number
+  finder.open()
+  assert(vim.bo.filetype == "bean_find_scope", "Show a full-window scope buffer")
+  assert(not vim.bo.modifiable and vim.wo.cursorline, "Scope buffer is read-only with visible selection")
+  assert(vim.api.nvim_win_get_cursor(0)[1] == 4, "Preselect the project root")
+  vim.fn.maparg("<Esc>", "n", false, true).callback()
+  assert(vim.api.nvim_get_current_buf() == origin and vim.bo.modified, "Esc restores unsaved source buffer")
+  assert(vim.deep_equal(vim.api.nvim_win_get_cursor(0), { 1, 3 }), "Restore source cursor")
+  assert(vim.wo.number == old_number, "Restore source window options")
+
+  vim.wo.number = true
+  finder.open()
+  local abandoned = vim.api.nvim_get_current_buf()
+  vim.api.nvim_win_set_buf(0, origin)
+  assert(vim.wait(1000, function() return not vim.api.nvim_buf_is_valid(abandoned) end), "Clean up an abandoned scope buffer")
+  assert(vim.wo.number, "Restore window options when leaving by other commands")
+end)
+vim.cmd.lcd(vim.fn.fnameescape(cwd))
+vim.fn.delete(root, "rf")
+if not ok then
+  io.stderr:write(tostring(err) .. "\n")
+  vim.cmd("cquit 1")
+end
+print("PASS file finder scopes")
+vim.cmd("qa!")

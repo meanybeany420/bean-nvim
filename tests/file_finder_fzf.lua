@@ -1,0 +1,76 @@
+-- Run: nvim --headless -u NONE -i NONE -l tests/file_finder_fzf.lua
+vim.opt.rtp:prepend(vim.fn.getcwd())
+local root = vim.fn.tempname() .. " quote's $USER directory"
+vim.fn.mkdir(root .. "/.git", "p")
+local source = root .. "/source.txt"
+local target = root .. "/needle 'file' [1].txt"
+vim.fn.writefile({ "source" }, source)
+vim.fn.writefile({ "target" }, target)
+vim.fn.writefile({ "hidden" }, root .. "/.hidden-file")
+local cwd = vim.fn.getcwd()
+local ok, err = pcall(function()
+  local finder = require("config.file_finder")
+  assert(vim.uv.chdir(root))
+  vim.cmd("edit " .. vim.fn.fnameescape(source))
+  local origin = vim.api.nvim_get_current_buf()
+  vim.bo.modified = true
+  local function launch()
+    assert(finder.scopes()[1].path == root, "Project scope must preserve a literal dollar sign: " .. finder.scopes()[1].path)
+    finder.open()
+    local scope_buffer = vim.api.nvim_get_current_buf()
+    local enter = vim.fn.maparg("<CR>", "n", false, true)
+    assert(enter.callback, "Scope Enter must launch fzf")
+    enter.callback()
+    assert(vim.bo.filetype == "bean_fuzzy", "Run actual fzf in a full-window terminal buffer")
+    local term = vim.api.nvim_get_current_buf()
+    assert(vim.wait(5000, function()
+      return table.concat(vim.api.nvim_buf_get_lines(term, 0, -1, false), "\n"):find("needle", 1, true)
+    end), "fzf must list real files from the chosen directory: " .. table.concat(vim.api.nvim_buf_get_lines(term, 0, -1, false), " | "))
+    local screen = table.concat(vim.api.nvim_buf_get_lines(term, 0, -1, false), "\n")
+    assert(screen:find(require("config.file_icons").get(target), 1, true), "Show Oil-style file icons inside fzf")
+    return vim.b.terminal_job_id, scope_buffer
+  end
+  local channel = launch()
+  vim.api.nvim_chan_send(channel, "needle")
+  vim.wait(200, function() return false end)
+  vim.api.nvim_chan_send(channel, "\r")
+  assert(vim.wait(5000, function() return vim.api.nvim_buf_get_name(0) == target end), "Typing and Enter must open a safely escaped matching filename")
+  assert(vim.bo[origin].modified, "Opening a match must preserve unsaved source changes")
+  channel = launch()
+  vim.api.nvim_chan_send(channel, "\27")
+  assert(vim.wait(5000, function() return vim.bo.filetype == "bean_find_scope" end), "fzf Esc must return to the scope buffer")
+  vim.fn.maparg("<Esc>", "n", false, true).callback()
+  assert(vim.api.nvim_buf_get_name(0) == target, "Second Esc returns to the source file")
+
+  finder.open()
+  vim.api.nvim_win_set_cursor(0, { 7, 0 })
+  local input = vim.ui.input
+  vim.ui.input = function(opts, callback)
+    assert(opts.completion == "dir", "Custom directory input must offer directory completion")
+    callback(root)
+  end
+  vim.fn.maparg("<CR>", "n", false, true).callback()
+  vim.ui.input = input
+  local custom_term = vim.api.nvim_get_current_buf()
+  assert(vim.wait(5000, function()
+    return table.concat(vim.api.nvim_buf_get_lines(custom_term, 0, -1, false), "\n"):find(".hidden-file", 1, true)
+  end), "Custom directory search includes dotfiles")
+  vim.api.nvim_chan_send(vim.b.terminal_job_id, "\27")
+  assert(vim.wait(5000, function() return vim.bo.filetype == "bean_find_scope" end), "Cancel the custom search")
+  vim.fn.maparg("<Esc>", "n", false, true).callback()
+
+  local running, scope_buffer = launch()
+  vim.cmd.stopinsert()
+  vim.api.nvim_win_set_buf(0, origin)
+  assert(vim.wait(3000, function() return not vim.api.nvim_buf_is_valid(scope_buffer) end), "Leaving the terminal must clean up its scope buffer")
+  assert(vim.wait(3000, function() return vim.fn.jobwait({ running }, 0)[1] ~= -1 end), "Leaving must stop the fzf process")
+  assert(vim.api.nvim_get_current_buf() == origin, "A late callback must not steal focus or resurrect the finder")
+end)
+vim.cmd.lcd(vim.fn.fnameescape(cwd))
+vim.fn.delete(root, "rf")
+if not ok then
+  io.stderr:write(tostring(err) .. "\n")
+  vim.cmd("cquit 1")
+end
+print("PASS actual fzf: type, open, quoted paths, unsaved work, two-stage Esc")
+vim.cmd("qa!")

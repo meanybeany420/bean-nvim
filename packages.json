@@ -1,0 +1,82 @@
+[
+  {
+    "name": "mini.icons",
+    "src": "https://github.com/echasnovski/mini.icons",
+    "version": "9e4c1645ce2b78afd6191b6be2c38bc0f998dd48"
+  },
+  {
+    "name": "nvim-web-devicons",
+    "src": "https://github.com/nvim-tree/nvim-web-devicons",
+    "version": "ec309a0eaff6ea967e58c275996155ab5c16938d"
+  },
+  {
+    "name": "mini.pairs",
+    "src": "https://github.com/echasnovski/mini.pairs",
+    "version": "03eb1f0062a2cee5314d1ac3939246e4bb21352e"
+  },
+  {
+    "name": "oil.nvim",
+    "src": "https://github.com/stevearc/oil.nvim",
+    "version": "d3733d933833a0e59b813ecec99341527adf0c28"
+  },
+  {
+    "name": "blink.cmp",
+    "src": "https://github.com/saghen/blink.cmp",
+    "version": "78336bc89ee5365633bcf754d93df01678b5c08f"
+  },
+  {
+    "name": "nvim-lspconfig",
+    "src": "https://github.com/neovim/nvim-lspconfig",
+    "version": "77b7432d4770d23b277d37923e5a08a442d8bb07"
+  },
+  {
+    "name": "mason.nvim",
+    "src": "https://github.com/mason-org/mason.nvim",
+    "version": "cbf8d285e1462dd24acf3507817be2bbcb035919"
+  },
+  {
+    "name": "mason-lspconfig.nvim",
+    "src": "https://github.com/mason-org/mason-lspconfig.nvim",
+    "version": "27b98a54bc04d2e8649d2e701c89aec0d02c11a4"
+  },
+  {
+    "name": "nvim-treesitter",
+    "src": "https://github.com/nvim-treesitter/nvim-treesitter",
+    "version": "29212d826054bb2948fa9d3a99eca9bf6a050eb2"
+  },
+  {
+    "name": "conform.nvim",
+    "src": "https://github.com/stevearc/conform.nvim",
+    "version": "016802de402556da54c36bd7359b441266b01cdd"
+  },
+  {
+    "name": "lualine.nvim",
+    "src": "https://github.com/nvim-lualine/lualine.nvim",
+    "version": "221ce6b2d999187044529f49da6554a92f740a96"
+  },
+  {
+    "name": "nui.nvim",
+    "src": "https://github.com/MunifTanjim/nui.nvim",
+    "version": "10fc361835c856ba4233ef5ea135b919bf3dce97"
+  },
+  {
+    "name": "nvim-notify",
+    "src": "https://github.com/rcarriga/nvim-notify",
+    "version": "8701bece920b38ea289b457f902e2ad184131a5d"
+  },
+  {
+    "name": "plenary.nvim",
+    "src": "https://github.com/nvim-lua/plenary.nvim",
+    "version": "74b06c6c75e4eeb3108ec01852001636d85a932b"
+  },
+  {
+    "name": "harpoon",
+    "src": "https://github.com/ThePrimeagen/harpoon",
+    "version": "87b1a3506211538f460786c23f98ec63ad9af4e5"
+  },
+  {
+    "name": "noice.nvim",
+    "src": "https://github.com/folke/noice.nvim",
+    "version": "7bfd942445fb63089b59f97ca487d605e715f155"
+  }
+]

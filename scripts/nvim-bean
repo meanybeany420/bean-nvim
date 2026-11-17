@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launch the isolated Bean setup; leave plain nvim unchanged.
+export NVIM_APPNAME=nvim-bean
+exec nvim "$@"

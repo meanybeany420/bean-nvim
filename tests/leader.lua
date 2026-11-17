@@ -1,0 +1,16 @@
+-- NVIM_APPNAME=nvim-bean nvim --headless -u NONE -i NONE -l tests/leader.lua
+local ok, err = pcall(function()
+  dofile(vim.fn.stdpath('config') .. '/init.lua')
+  vim.cmd.enew()
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { 'abcdef' })
+  vim.api.nvim_win_set_cursor(0, { 1, 1 })
+  vim.api.nvim_feedkeys(' ', 'xt', false)
+  assert(vim.api.nvim_win_get_cursor(0)[2] == 1, 'Space alone must not move the cursor')
+  vim.api.nvim_feedkeys(' r', 'xt', false)
+  assert(vim.bo.filetype == 'bean_recent', 'Space r must still open recent files')
+  vim.fn.maparg('<Esc>', 'n', false, true).callback()
+  assert(vim.api.nvim_win_get_cursor(0)[2] == 1, 'Esc must restore the original cursor')
+end)
+if not ok then io.stderr:write(tostring(err) .. '\n'); vim.cmd('cquit 1') end
+io.stdout:write('PASS leader: Space alone stays still; Space r and Esc still work\n')
+vim.cmd('qa!')

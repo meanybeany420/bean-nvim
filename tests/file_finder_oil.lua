@@ -1,0 +1,45 @@
+local root = vim.fn.tempname()
+vim.fn.mkdir(root, "p")
+vim.fn.writefile({ "a" }, root .. "/a.txt")
+vim.fn.writefile({ "b" }, root .. "/b.txt")
+local ok, err = pcall(function()
+  local oil = require("oil")
+  local ready = false
+  oil.open(root, {}, function() ready = true end)
+  assert(vim.wait(3000, function() return ready end), "Oil must load")
+  for line = 1, vim.api.nvim_buf_line_count(0) do
+    local entry = oil.get_entry_on_line(0, line)
+    if entry and entry.name == "b.txt" then
+      vim.api.nvim_win_set_cursor(0, { line, 0 })
+    end
+  end
+  local origin = vim.api.nvim_get_current_buf()
+  local url = vim.api.nvim_buf_get_name(origin)
+  local scopes, selected = require("config.file_finder").scopes()
+  assert(selected == 2 and vim.fs.normalize(scopes[2].path) == vim.fs.normalize(root), "Default to the current Oil directory")
+  require("config.file_finder").open()
+  assert(vim.api.nvim_win_get_cursor(0)[1] == 5, "Preselect Oil directory in the scope buffer")
+  vim.fn.maparg("<CR>", "n", false, true).callback()
+  assert(vim.bo.filetype == "bean_fuzzy", "Oil scope launches fzf")
+  local term = vim.api.nvim_get_current_buf()
+  assert(vim.wait(5000, function()
+    return table.concat(vim.api.nvim_buf_get_lines(term, 0, -1, false), "\n"):find("b.txt", 1, true)
+  end), "Search the selected Oil directory")
+  require("oil.view").delete_hidden_buffers()
+  assert(not vim.api.nvim_buf_is_valid(origin), "Exercise real Oil hidden-buffer cleanup")
+  vim.fn.maparg("<Esc>", "t", false, true).callback()
+  assert(vim.wait(3000, function() return vim.bo.filetype == "bean_find_scope" end), "First Esc returns to scopes")
+  vim.fn.maparg("<Esc>", "n", false, true).callback()
+  assert(vim.wait(3000, function()
+    local entry = vim.bo.filetype == "oil" and oil.get_cursor_entry()
+    return entry and entry.name == "b.txt"
+  end), "Second Esc restores Oil and the selected entry after cleanup")
+  assert(vim.api.nvim_buf_get_name(0) == url, "Return to the same Oil directory")
+end)
+vim.fn.delete(root, "rf")
+if not ok then
+  io.stderr:write(tostring(err) .. "\n")
+  vim.cmd("cquit 1")
+end
+print("PASS finder from Oil: default scope, real fzf, two Esc presses, restored directory and selection")
+vim.cmd("qa!")
