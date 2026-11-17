@@ -1,6 +1,6 @@
 # nvim-bean
 
-The bits of my old setup I actually use, without LazyVim or lazy.nvim.
+
 
 Run `nvim-bean`. Plain `nvim` is still the old setup.
 
